@@ -33,7 +33,7 @@ import { setVideosOf, setVideoCount } from '../../frontend/src/lib/set-videos.js
 // through the same local-noon construction the handlers use and insist it comes back unchanged;
 // as a zod refine that is a -32602 at the SDK boundary instead of a confident wrong answer.
 const localIso = d => d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0')
-const todayIso = () => localIso(new Date())
+export const todayIso = () => localIso(new Date())
 export const isoDate = () => z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'must be YYYY-MM-DD').refine(
   v => { const d = new Date(v + 'T12:00:00'); return !Number.isNaN(d.getTime()) && localIso(d) === v },
   { message: 'not a date the calendar has (YYYY-MM-DD)' }
@@ -798,7 +798,7 @@ export const TOOLS = [
   listRoutines, getRoutine, previewSession, getWeekPlan, listWorkouts, getWorkout, getBodyweight, estimate1rm, muscleBalance, getProgramme, searchExercises
 ]
 
-function noState() {
+export function noState() {
   return {
     error: 'no synced state yet — sign in at least once from a device so the openGym api can save a state file for this profile',
     unit: 'kg'

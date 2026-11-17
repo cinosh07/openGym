@@ -30,7 +30,7 @@ test('a token is shown once and stored only as its SHA-256', () => {
 
 test('scopes are capped and a token that sees nothing is refused', () => {
   assert.deepEqual(cleanTokenScopes({ notes: 'apply', workouts: 'suggest', plans: 'apply', admin: 'apply' }),
-    { workouts: 'off', plans: 'apply', bodyweight: 'off', measurements: 'off', notes: 'view' });
+    { workouts: 'off', plans: 'apply', bodyweight: 'off', measurements: 'off', notes: 'apply' });
   assert.throws(() => createToken({}, user(), { scopes: {} }), e => e instanceof ScopeError && e.code === 'nothing-granted');
   assert.throws(() => createToken({}, user(), { scopes: { workouts: 'view' }, days: 5 }), e => e.code === 'bad-days');
   const db = {};
@@ -118,6 +118,17 @@ test('scopedState: own sounds never, body facts only with body weight or measure
   assert.equal(bw.heightCm, 181); assert.equal(bw.sex, 'female'); assert.equal('sounds' in bw, false);
   assert.equal(scopedState(S, { measurements: 'view' }).birthYear, 1990);
   assert.throws(() => mergeScoped(S, { sounds: [] }, { workouts: 'apply' }), e => e.code === 'scope');
+});
+
+test('notes: a token at Change directly writes the exercise and day notes, one at See may not', () => {
+  const S = { exNotes: { a: 'old' }, dayNotes: {}, routines: [] };
+  const sent = { exNotes: { a: 'old', b: 'new' }, dayNotes: { '2026-11-16': { tag: 'travel', _ts: 5 } } };
+  const { next, touched } = mergeScoped(S, sent, { notes: 'apply' });
+  assert.deepEqual(next.exNotes, { a: 'old', b: 'new' });
+  assert.deepEqual(next.dayNotes, { '2026-11-16': { tag: 'travel', _ts: 5 } });
+  assert.deepEqual(touched, ['notes']);
+  assert.throws(() => mergeScoped(S, sent, { notes: 'view' }), e => e.status === 403 && e.code === 'scope');
+  assert.throws(() => mergeScoped(S, { ...sent, routines: [{ id: 'x' }] }, { notes: 'apply' }), e => e.status === 403 && e.code === 'scope');
 });
 
 test('mergeScoped: writes what it may, ignores what it read back unchanged, refuses the rest', () => {

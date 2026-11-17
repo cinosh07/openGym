@@ -29,7 +29,7 @@ export const TOKEN_CATEGORIES = [
   { id: 'plans', max: 'apply' },
   { id: 'bodyweight', max: 'apply' },
   { id: 'measurements', max: 'apply' },
-  { id: 'notes', max: 'view' },
+  { id: 'notes', max: 'apply' },
 ];
 export const TOKEN_CATEGORY_IDS = TOKEN_CATEGORIES.map(c => c.id);
 export const TOKENS_MAX = 10;
