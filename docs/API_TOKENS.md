@@ -18,7 +18,7 @@ Each category is **Off**, **See** or **Change directly**:
 | Plans & routines | routines, the weekly plan, the floating week (`queue`), rotations, programmes, date targets, your own exercises | Change directly |
 | Body weight | weigh-ins, goal weight, weekly rate | Change directly |
 | Body measurements | check-ins and your own fields | Change directly |
-| Notes | day notes, standing exercise notes | See |
+| Notes | day notes, standing exercise notes | Change directly |
 
 Settings such as units, the week start and progression defaults ride along with any token that
 sees anything (they are needed to read the rest the way the app does) and are never writable.

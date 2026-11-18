@@ -68,7 +68,7 @@ the server's stderr.
 
 ## Tools
 
-Eleven read-only tools, and four that write:
+Twelve read-only tools, and seven that write:
 
 | Tool | What it answers |
 |---|---|
@@ -87,6 +87,10 @@ Eleven read-only tools, and four that write:
 | `create_routine` | *Writes.* "Squat 5 × 5 at 100 kg, plank 3 × 60 s, Tuesdays and Fridays" → a routine in your plan. |
 | `update_routine` | *Writes.* Rename, replace or append exercises, move to other weekdays; every slot keeps the settings you did not mention. `expected_revision` makes it all-or-nothing against what you saw. |
 | `delete_routine` | *Writes.* Only with `confirm: true` and the `expected_revision` from `get_routine`. |
+| `get_notes` | What notes do I have? The standing note on each exercise and the notes on days (sick, travel, rest, injured, or a line of text). Needs Notes at "See" or more. |
+| `create_exercise` | *Writes.* "Add a single-leg balance hold" → an exercise of your own (name, body part, equipment, muscles), stored like one made in the app, ready for routines and workouts by name or id. A name the library already has is refused with that exercise as a candidate. Needs Plans or Workouts at "Change directly". |
+| `set_exercise_note` | *Writes.* The standing tip shown with an exercise in every workout. `replace` (default) or `append`; empty text removes it. Needs Notes at "Change directly". |
+| `set_day_note` | *Writes.* A note on a day: a quick pick, a line of text, or both (today or earlier). Needs Notes at "Change directly". |
 
 `get_routine` and `preview_session` answer two different questions, and confusing them is the
 easiest way for a coach to give wrong advice. `get_routine` reports what the routine *stores*.

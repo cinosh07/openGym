@@ -7,9 +7,11 @@ import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js'
 import { TOOLS } from './tools.js'
 import { WRITE_TOOLS } from './write-tools.js'
 import { ROUTINE_TOOLS } from './routine-tools.js'
+import { EXERCISE_TOOLS } from './exercise-tools.js'
+import { NOTE_TOOLS } from './note-tools.js'
 
 export const VERSION = '0.2.0'
-export const ALL_TOOLS = [...TOOLS, ...WRITE_TOOLS, ...ROUTINE_TOOLS]
+export const ALL_TOOLS = [...TOOLS, ...WRITE_TOOLS, ...ROUTINE_TOOLS, ...EXERCISE_TOOLS, ...NOTE_TOOLS]
 
 // What each tool needs of a scoped token: [category, level] (api/tokens.js TOKEN_CATEGORIES).
 export const TOOL_NEEDS = {
@@ -21,9 +23,12 @@ export const TOOL_NEEDS = {
   search_exercises: [['workouts', 'view'], ['plans', 'view']],
   log_workout: ['workouts', 'apply'],
   create_routine: ['plans', 'apply'], update_routine: ['plans', 'apply'], delete_routine: ['plans', 'apply'],
+  // The profile's own exercises (customEx) belong to both Workouts and Plans (api/tokens.js KEY_CATEGORY).
+  create_exercise: [['plans', 'apply'], ['workouts', 'apply']],
+  get_notes: ['notes', 'view'], set_exercise_note: ['notes', 'apply'], set_day_note: ['notes', 'apply'],
 }
 const RANK = { off: 0, view: 1, apply: 2 }
-const WRITES = new Set(['log_workout', 'create_routine', 'update_routine', 'delete_routine'])
+const WRITES = new Set(['log_workout', 'create_routine', 'update_routine', 'delete_routine', 'create_exercise', 'set_exercise_note', 'set_day_note'])
 
 /** Whether a token holding `scopes` can use tool `name`. No scopes (the data folder, a paired
  *  session): every tool. A tool not in TOOL_NEEDS is never offered to a scoped token. */
@@ -42,6 +47,8 @@ export const INSTRUCTIONS = [
   'Read before you advise: list_routines and get_week_plan for the plan, list_workouts and estimate_1rm for how training went, muscle_balance for what is under- or over-trained.',
   'To build or change a plan, find each exercise with search_exercises and pass its id, then call create_routine or update_routine with dry_run: true, show the user the preview and save only after they agree.',
   'To log a session the user describes, use log_workout (dry_run first if you had to guess anything).',
+  'If an exercise they need is not in the library, search under two or three names first, and only then offer create_exercise.',
+  'Notes: get_notes reads the standing notes on exercises and the notes on days; set_exercise_note and set_day_note write them (read first, so you do not overwrite what the user wrote). A routine\'s own tip on an exercise goes in the routine\'s `note` instead.',
   'Weights are in the profile\'s unit (kg or lb) unless you say otherwise. Deleting needs the user\'s explicit yes.',
   'A tool that is missing was not granted: the user picks what you may see and change when they connect openGym.',
 ].join(' ')
