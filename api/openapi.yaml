@@ -1241,6 +1241,49 @@ paths:
         '403': { description: 'A key outside what the token may change (`scope`).' }
         '409': { description: 'The revision moved (body has `state` and `rev`), or the profile never synced (`not-synced`).' }
         '429': { description: Too many writes with this token this hour. }
+  /api/token/run/today:
+    get:
+      tags: [tokens]
+      operationId: tokenRunToday
+      summary: The structured run session of a day, steps unrolled
+      description: >-
+        For the Trail Coach app, which sends the session to the watch. The session planned for
+        `date` (today by default, the server's local day): name, type (road, trail, treadmill,
+        quality), whether a run is already logged for it, and the steps one by one in order, each
+        numbered from 0 with `block: { n, of }` when it comes from a repeated block. A step is
+        `{ index, name, intensity, action, duration_s | distance_m, hr_min, hr_max, climb_margin, block }`.
+        `session` is null when nothing is planned and `steps` is empty for a plain planned run.
+        Needs Plans at view or more.
+      security: [{ tokenAuth: [] }]
+      parameters:
+        - { name: date, in: query, required: false, schema: { type: string, description: YYYY-MM-DD } }
+      responses:
+        '200':
+          description: The day and its session (or null).
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  date: { type: string }
+                  session:
+                    type: object
+                    nullable: true
+                    properties:
+                      name: { type: string, nullable: true }
+                      type: { type: string, nullable: true }
+                      kind: { type: string }
+                      done: { type: boolean }
+                      note: { type: string }
+                      min: { type: number }
+                      km: { type: number }
+                      total_s: { type: integer }
+                      total_m: { type: integer }
+                      steps: { type: array, items: { type: object } }
+        '400': { description: The date is not YYYY-MM-DD. }
+        '401': { $ref: '#/components/responses/TokenRefused' }
+        '403': { description: The token may not see plans (`scope`). }
+        '429': { description: Too many reads with this token this minute. }
   /api/token/data/rev:
     get:
       tags: [tokens]

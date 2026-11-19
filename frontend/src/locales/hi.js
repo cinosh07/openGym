@@ -5897,4 +5897,8 @@ export default {
   "Preview on": "प्रीव्यू यहां",
   // 1.4.5 UX round, P2: timed holds in the finish summary (next hold is shorter)
   "shorter": "थोड़ा छोटा",
+  // running and trail (Garmin import)
+  "Trail run": "ट्रेल रन",
+  "From Garmin": "Garmin से",
+  "Climb": "चढ़ाई",
 }

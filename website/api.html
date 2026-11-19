@@ -328,7 +328,7 @@ main.api-main .lead { color: var(--fg-2); max-width: 58ch; margin: 14px 0 0; fon
   <p class="api-facts">
     <span>OpenAPI 3.1.0</span>
     <span>openGym v1.4.5</span>
-    <span>177 endpoints</span>
+    <span>178 endpoints</span>
     <span>AGPL-3.0-or-later</span>
   </p>
 
@@ -4037,6 +4037,50 @@ main.api-main .lead { color: var(--fg-2); max-width: 58ch; margin: 14px 0 0; fon
   <div class="prow rrow">
     <span class="r-code s4">429</span>
     <span class="p-desc">Too many writes with this token this hour.</span>
+  </div>
+    </div>
+  </div>
+</details>
+
+<details class="ep" id="op-tokenRunToday">
+  <summary>
+    <span class="m get">GET</span>
+    <span class="ep-path"><code>/api/token/run/today</code></span>
+    <span class="ep-chev" aria-hidden="true"></span>
+    <span class="ep-sum">The structured run session of a day, steps unrolled</span>
+  </summary>
+  <div class="ep-body">
+<p>For the Trail Coach app, which sends the session to the watch. The session planned for <code>date</code> (today by default, the server's local day): name, type (road, trail, treadmill, quality), whether a run is already logged for it, and the steps one by one in order, each numbered from 0 with <code>block: { n, of }</code> when it comes from a repeated block. A step is <code>{ index, name, intensity, action, duration_s | distance_m, hr_min, hr_max, climb_margin, block }</code>. <code>session</code> is null when nothing is planned and <code>steps</code> is empty for a plain planned run. Needs Plans at view or more.</p>
+    <p class="ep-auth"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="11" width="16" height="10" rx="2.5"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg><span>Requires a session: the cookie set at sign-in, or <code>Authorization: Bearer &lt;token&gt;</code> from mobile-app pairing.</span></p>
+<p class="ep-h">Query parameters</p><div class="ptab">
+  <div class="prow">
+    <span class="p-name">date</span>
+    <span class="p-type">string</span>
+    <span class="p-desc"></span>
+  </div>
+</div>
+
+    <p class="ep-h">Responses</p>
+    <div class="ptab">
+  <div class="prow rrow">
+    <span class="r-code s2">200</span>
+    <span class="p-desc">The day and its session (or null).<span class="r-sig">{ date: string, session: object }</span></span>
+  </div>
+  <div class="prow rrow">
+    <span class="r-code s4">400</span>
+    <span class="p-desc">The date is not YYYY-MM-DD.</span>
+  </div>
+  <div class="prow rrow">
+    <span class="r-code s4">401</span>
+    <span class="p-desc">No token, an unknown, expired or revoked one, or its profile signed out everywhere or is disabled.<span class="r-sig"><code>{&quot;error&quot;:&quot;token not accepted&quot;}</code></span></span>
+  </div>
+  <div class="prow rrow">
+    <span class="r-code s4">403</span>
+    <span class="p-desc">The token may not see plans (<code>scope</code>).</span>
+  </div>
+  <div class="prow rrow">
+    <span class="r-code s4">429</span>
+    <span class="p-desc">Too many reads with this token this minute.</span>
   </div>
     </div>
   </div>

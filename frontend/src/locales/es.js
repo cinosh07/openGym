@@ -5897,4 +5897,8 @@ export default {
   "Preview on": "Vista previa en",
   // 1.4.5 UX round, P2: timed holds in the finish summary (next hold is shorter)
   "shorter": "un poco más corto",
+  // running and trail (Garmin import)
+  "Trail run": "Carrera de trail",
+  "From Garmin": "Desde Garmin",
+  "Climb": "Desnivel positivo",
 }

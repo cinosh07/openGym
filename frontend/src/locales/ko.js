@@ -5897,4 +5897,8 @@ export default {
   "Preview on": "미리 볼 화면",
   // 1.4.5 UX round, P2: timed holds in the finish summary (next hold is shorter)
   "shorter": "조금 짧게",
+  // running and trail (Garmin import)
+  "Trail run": "트레일 러닝",
+  "From Garmin": "Garmin에서",
+  "Climb": "상승 고도",
 }

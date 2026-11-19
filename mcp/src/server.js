@@ -9,9 +9,11 @@ import { WRITE_TOOLS } from './write-tools.js'
 import { ROUTINE_TOOLS } from './routine-tools.js'
 import { EXERCISE_TOOLS } from './exercise-tools.js'
 import { NOTE_TOOLS } from './note-tools.js'
+import { RUN_TOOLS } from './run-tools.js'
+import { SESSION_TOOLS } from './session-tools.js'
 
 export const VERSION = '0.2.0'
-export const ALL_TOOLS = [...TOOLS, ...WRITE_TOOLS, ...ROUTINE_TOOLS, ...EXERCISE_TOOLS, ...NOTE_TOOLS]
+export const ALL_TOOLS = [...TOOLS, ...WRITE_TOOLS, ...ROUTINE_TOOLS, ...EXERCISE_TOOLS, ...NOTE_TOOLS, ...RUN_TOOLS, ...SESSION_TOOLS]
 
 // What each tool needs of a scoped token: [category, level] (api/tokens.js TOKEN_CATEGORIES).
 export const TOOL_NEEDS = {
@@ -26,9 +28,14 @@ export const TOOL_NEEDS = {
   // The profile's own exercises (customEx) belong to both Workouts and Plans (api/tokens.js KEY_CATEGORY).
   create_exercise: [['plans', 'apply'], ['workouts', 'apply']],
   get_notes: ['notes', 'view'], set_exercise_note: ['notes', 'apply'], set_day_note: ['notes', 'apply'],
+  // Runs are activities, which a token holds under Workouts; a planned run is part of the plan.
+  list_activities: ['workouts', 'view'], get_run_summary: ['workouts', 'view'],
+  log_activity: ['workouts', 'apply'], import_garmin_activities: ['workouts', 'apply'], set_run_plan: ['plans', 'apply'],
+  // Structured sessions (the steps a watch runs) are plan; linking a run to one changes the run.
+  get_run_session: ['plans', 'view'], set_run_session: ['plans', 'apply'], link_activity_to_session: ['workouts', 'apply'],
 }
 const RANK = { off: 0, view: 1, apply: 2 }
-const WRITES = new Set(['log_workout', 'create_routine', 'update_routine', 'delete_routine', 'create_exercise', 'set_exercise_note', 'set_day_note'])
+const WRITES = new Set(['log_workout', 'create_routine', 'update_routine', 'delete_routine', 'create_exercise', 'set_exercise_note', 'set_day_note', 'log_activity', 'import_garmin_activities', 'set_run_plan', 'set_run_session', 'link_activity_to_session'])
 
 /** Whether a token holding `scopes` can use tool `name`. No scopes (the data folder, a paired
  *  session): every tool. A tool not in TOOL_NEEDS is never offered to a scoped token. */
@@ -49,6 +56,7 @@ export const INSTRUCTIONS = [
   'To log a session the user describes, use log_workout (dry_run first if you had to guess anything).',
   'If an exercise they need is not in the library, search under two or three names first, and only then offer create_exercise.',
   'Notes: get_notes reads the standing notes on exercises and the notes on days; set_exercise_note and set_day_note write them (read first, so you do not overwrite what the user wrote). A routine\'s own tip on an exercise goes in the routine\'s `note` instead.',
+  'Running: list_activities and get_run_summary read runs, trail runs and other sport (km, climb in metres, heart rate and zones; they are not gym workouts); get_week_plan shows the planned runs in `runs`. set_run_plan plans a simple one for a date, get_run_session and set_run_session read and write a structured one (named steps with heart-rate targets and repeated blocks, which the Trail Coach app sends to the watch), log_activity files one the user describes, import_garmin_activities brings in the Garmin collector\'s records (safe to repeat).',
   'Weights are in the profile\'s unit (kg or lb) unless you say otherwise. Deleting needs the user\'s explicit yes.',
   'A tool that is missing was not granted: the user picks what you may see and change when they connect openGym.',
 ].join(' ')

@@ -6,6 +6,7 @@ import { fmtDate, fmtNum, todayISO, uid } from '../lib/format.js'
 import { NOTE_MAX } from '../lib/history.js'
 import { tappable, useSheetKeyboard } from '../lib/use-sheet-keyboard.js'
 import { SPORTS, SPORT_LABEL, SPORT_ICON, SPORT_PRESETS, ACTIVITY_MIN_MAX, activitiesOf, withActivity, activityName } from '../lib/activities.js'
+import { distUnitOf, distLabel, toDist, fromDist } from '../lib/distance.js'
 import DateField from './DateField.jsx'
 import Icon from './Icon.jsx'
 import { Button, Stepper } from './ui.jsx'
@@ -19,11 +20,16 @@ const SOURCE_LINE = {
   ah: 'From Apple Health',
   import: 'From an import',
   or: 'From openRunning',
+  garmin: 'From Garmin',
 }
 
-// Distances in the profile's unit: km, or miles next to lb.
+// Distances in the profile's distance unit: the speed unit's (miles with mph, km with km/h; mph is the
+// default next to lb, and Settings → speed unit km/h gives kilometres with a profile in pounds).
 const MI = 1.609344
-export const distText = (S, km) => (S?.unit === 'lb' ? t('{0} mi', fmtNum(Math.round(km / MI * 10) / 10)) : t('{0} km', fmtNum(Math.round(km * 10) / 10)))
+export const distText = (S, km) => (distUnitOf(S) === 'mi' ? t('{0} mi', fmtNum(Math.round(km / MI * 10) / 10)) : t('{0} km', fmtNum(Math.round(km * 10) / 10)))
+// The sports that take a distance and a climb in the sheet.
+const WITH_DISTANCE = new Set(['run', 'trail', 'hike', 'ride', 'swim', 'row', 'ski'])
+const WITH_CLIMB = new Set(['run', 'trail', 'hike', 'ride', 'ski'])
 
 function ActivityLog({ id = null, day = null, close }) {
   const S = useStore(s => s.S)
@@ -33,12 +39,20 @@ function ActivityLog({ id = null, day = null, close }) {
   const [sport, setSport] = useState(had?.sport || 'run')
   const [min, setMin] = useState(had?.min || SPORT_PRESETS[1])
   const [d, setD] = useState(had?.d || day || todayISO())
+  const du = distUnitOf(S)
+  const [dist, setDist] = useState(had?.km ? toDist(had.km, du) : 0)
+  const [climb, setClimb] = useState(had?.asc || 0)
   const [note, setNote] = useState(had?.note || '')
   const noteRef = useRef(null)
   const onNoteFocus = useSheetKeyboard(noteRef)
   const save = () => {
     if (!(min >= 1) || d > todayISO()) return
-    update(s => { s.activities = withActivity(s.activities, id || 'm' + uid(), { ...(had || {}), d, sport, min, note: note.trim().slice(0, NOTE_MAX), src: had?.src || 'manual' }) })
+    update(s => { s.activities = withActivity(s.activities, id || 'm' + uid(), {
+      ...(had || {}), d, sport, min, note: note.trim().slice(0, NOTE_MAX), src: had?.src || 'manual',
+      // The distance and the climb only for the sports that take them; what Garmin added (heart rate, zones…) stays.
+      km: WITH_DISTANCE.has(sport) && dist > 0 ? fromDist(dist, du) : undefined,
+      asc: WITH_CLIMB.has(sport) && climb > 0 ? climb : undefined,
+    }) })
     close()
     toast(had ? t('Saved') : t('{0} logged. Your legs have opinions.', t(SPORT_LABEL[sport])))
   }
@@ -64,6 +78,18 @@ function ActivityLog({ id = null, day = null, close }) {
         aria-pressed={min === m} onClick={() => setMin(m)}>{t('{0} min', m)}</button>)}
       <Stepper value={min} min={1} max={ACTIVITY_MIN_MAX} step={5} decimal={false} onChange={setMin} unit={t('min')} ariaLabel={t('Minutes')} />
     </div>
+    {WITH_DISTANCE.has(sport) && <>
+      <div className="small muted" style={{ marginBottom: 6 }}>{t('Distance')}</div>
+      <div className="row" style={{ gap: 8, alignItems: 'center', flexWrap: 'wrap', marginBottom: 12 }}>
+        <Stepper value={dist} min={0} max={999} step={du === 'mi' ? 0.25 : 0.5} decimal onChange={setDist} unit={distLabel(du)} ariaLabel={t('Distance')} />
+      </div>
+    </>}
+    {WITH_CLIMB.has(sport) && <>
+      <div className="small muted" style={{ marginBottom: 6 }}>{t('Climb')}</div>
+      <div className="row" style={{ gap: 8, alignItems: 'center', flexWrap: 'wrap', marginBottom: 12 }}>
+        <Stepper value={climb} min={0} max={20000} step={50} decimal={false} onChange={setClimb} unit="m" ariaLabel={t('Climb')} />
+      </div>
+    </>}
     <label className="measure-date">
       <span>{t('Date')}</span>
       <DateField value={d} max={todayISO()} onChange={setD} label={t('Date')} />
@@ -86,7 +112,7 @@ export function ActivityRow({ a, showDate = true }) {
   return <div className="item act-row" data-activity={a.id} {...tappable(() => activitySheet({ id: a.id }))}>
     <span className="lrow-i act-i" aria-hidden="true" style={{ width: 34, height: 34, borderRadius: 8, fontSize: 19 }}><Icon name={SPORT_ICON[a.sport] || 'flag'} /></span>
     <div className="grow"><div className="tt">{activityName(a, t)}</div>
-      <div className="ss">{[showDate ? fmtDate(a.d, true) : null, t('{0} min', a.min), a.km ? distText(S, a.km) : null, a.note].filter(Boolean).join(' · ')}</div></div>
+      <div className="ss">{[showDate ? fmtDate(a.d, true) : null, t('{0} min', a.min), a.km ? distText(S, a.km) : null, a.asc > 0 ? `↑ ${a.asc} m` : null, a.avgHr ? `${a.avgHr} bpm` : null, a.note].filter(Boolean).join(' · ')}</div></div>
     <Icon name="chevronRight" className="chev" />
   </div>
 }

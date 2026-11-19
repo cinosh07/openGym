@@ -32,11 +32,16 @@ Sport that is not a gym workout is an **activity**, stored per session in the pr
 ```js
 S.activities = {
   '<id>': { d: '2026-11-06', sport: 'run', min: 42, km: 8.1, at: 1762412400000,
-            title: 'Morning loop', note: '', src: 'hc' | 'ah' | 'import' | 'manual' | 'or', _ts },
+            title: 'Morning loop', note: '', src: 'hc' | 'ah' | 'import' | 'manual' | 'or' | 'garmin', _ts },
 }
 ```
 
-- `sport` is one of `run ride swim hike row ski football racket ball climb fight yoga dance other`.
+- `sport` is one of `run trail ride swim hike row ski football racket ball climb fight yoga dance other`.
+- A run (`run` or `trail`) can also carry what a watch measured, all optional: `terrain` (`road trail treadmill track`),
+  `asc` and `desc` (metres), `avgHr` and `maxHr`, `zones` (seconds in each of the five heart-rate zones),
+  `cad` (steps per minute), `te` and `teAn` (Garmin's aerobic and anaerobic training effect), `load`, and `gid`
+  (Garmin's own id, so importing twice never makes two). Planned runs are `S.runPlan[date] = { kind: 'run'|'trail',
+  min?, km?, asc?, note?, _ts }`, a stamped map like `activities` (`lib/run-plan.js`).
 - A removal is a stamped empty entry (`{ _ts }`), merged per key like `recoverySessions`
   (`lib/sync-merge.js` and `api/sync-stamps.js` `STAMPED_MAPS`). An id that came from a health
   store or a file is derived from the source's own id, so reading it again never adds a second

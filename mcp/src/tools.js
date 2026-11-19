@@ -6,6 +6,7 @@ import { getState, getUser } from './state.js'
 import { setNoteOf } from '../../frontend/src/lib/set-notes.js'
 import { setTagCell } from '../../frontend/src/lib/set-tags.js'
 import { speedUnitOf } from '../../frontend/src/lib/speed.js'
+import { runPlanBetween } from '../../frontend/src/lib/run-plan.js'
 import {
   fmt, setLabel, exLine, muscleName, policyName, friendlyDuration, ratio, muscleOrder
 } from './labels.js'
@@ -208,7 +209,7 @@ export const getRoutine = {
 const DAY_NAMES = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
 export const getWeekPlan = {
   name: 'get_week_plan',
-  description: 'Show the user\'s training plan. `days` is the authoritative answer to "what is planned when": the next seven dates from today with the routines planned for each (a date can hold several — a combined day) and how each was decided: a coach-week session ("coach"), a session the user pinned to that date ("pinned"), a one-off routine override ("override"), a "rest" override ("rest_override"), the weekday plan ("weekday") or nothing ("rest"). `coach_week` is the current coach week when one is running (a week written by an external planner through the API, never by the app): its sessions are done IN ORDER on whatever days the user trains (no weekday attached), the first undone one is today\'s session, a session can be pinned to a date, and `waiting` means the week starts on `starts_on`. `weekdays` is the user\'s own weekly plan keyed by JS getDay() (Sunday=0 … Saturday=6, the openGym state convention) — in a coach week it holds only the routines the user planned themselves, which ride along beside the coach-week session.',
+  description: 'Show the user\'s training plan. `days` is the authoritative answer to "what is planned when": the next seven dates from today with the routines planned for each (a date can hold several — a combined day) and how each was decided: a coach-week session ("coach"), a session the user pinned to that date ("pinned"), a one-off routine override ("override"), a "rest" override ("rest_override"), the weekday plan ("weekday") or nothing ("rest"). `coach_week` is the current coach week when one is running (a week written by an external planner through the API, never by the app): its sessions are done IN ORDER on whatever days the user trains (no weekday attached), the first undone one is today\'s session, a session can be pinned to a date, and `waiting` means the week starts on `starts_on`. `weekdays` is the user\'s own weekly plan keyed by JS getDay() (Sunday=0 … Saturday=6, the openGym state convention) — in a coach week it holds only the routines the user planned themselves, which ride along beside the coach-week session. `runs` lists the planned runs and trail runs of those seven dates (set_run_plan), each with its status (today, upcoming, done); a run is not a routine.',
   schema: {},
   handler: () => {
     const S = getState()
@@ -253,6 +254,9 @@ export const getWeekPlan = {
         sessions: view.items.map(i => ({ routine_id: i.id, routine_name: i.name, state: i.state, pinned_to: i.on ?? null }))
       } : null,
       days,
+      // Planned runs (set_run_plan) for the same seven dates: kind run | trail, duration, km, climb, note,
+      // and status today | upcoming | done (a run is logged that day). A run is not a routine.
+      runs: runPlanBetween(S, days[0].date, days[6].date, isoToday),
       weekdays: [0, 1, 2, 3, 4, 5, 6].map(d => {
         const ids = weekdayIds(d)
         // Surface today's override only (not the whole dayPlan dict — usually empty, but might

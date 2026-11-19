@@ -53,8 +53,9 @@ import { createNotify } from './trainers/notify.js';
 import { OrgError } from './trainers/org-store.js';
 import { nutritionSourceFrom } from './sources/nutrition.js';
 import { createPermissions } from './permissions.js';
+import { runToday } from './run-today.js';
 import { createShareLog } from './share-log.js';
-import { createToken, findToken, touchToken, listTokens, revokeTokens, scopedState, mergeScoped, readCategories, ScopeError, TOKEN_CATEGORIES, TOKEN_DAYS, DEFAULT_DAYS, TOKEN_PREFIX } from './tokens.js';
+import { createToken, findToken, touchToken, listTokens, revokeTokens, allows, scopedState, mergeScoped, readCategories, ScopeError, TOKEN_CATEGORIES, TOKEN_DAYS, DEFAULT_DAYS, TOKEN_PREFIX } from './tokens.js';
 import * as oauth from './oauth.js';
 import { createBudgets, createCodeGuard } from './budgets.js';
 import { libraryConfig, publicLibraryConfig } from './library/config.js';
@@ -3072,6 +3073,20 @@ const routes = {
       if (state === UNREADABLE) { console.error('state file unreadable for', t.user.id); return json(res, 503, { error: 'state unreadable' }); }
       noteTokenRead(t);
       json(res, 200, { state: state ? scopedState(state, t.row.scopes) : null, rev: state?._rev || 0, ...(state?._wid ? { wid: state._wid } : {}) });
+    },
+    // The structured run session of a day, steps unrolled (run-today.js), for the Trail Coach app:
+    // needs Plans at view or more. ?date=YYYY-MM-DD, today (the server's local day) by default.
+    'GET /api/token/run/today': async (req, res) => {
+      const t = tokenAuth(req, res); if (!t) return;
+      if (!allows(t.row.scopes, 'plans', 'view')) return json(res, 403, { error: 'this token may not see plans', code: 'scope' });
+      const q = new URL(req.url, 'http://x').searchParams.get('date');
+      const d = new Date();
+      const today = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+      if (q && !/^\d{4}-\d{2}-\d{2}$/.test(q)) return json(res, 400, { error: 'date must be YYYY-MM-DD' });
+      const state = readStateStrict(t.user.id);
+      if (state === UNREADABLE) { console.error('state file unreadable for', t.user.id); return json(res, 503, { error: 'state unreadable' }); }
+      noteTokenRead(t);
+      json(res, 200, runToday(state, q || today));
     },
     'GET /api/token/data/rev': async (req, res) => {
       const t = tokenAuth(req, res); if (!t) return;

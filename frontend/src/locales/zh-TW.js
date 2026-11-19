@@ -5890,4 +5890,8 @@ export default {
   "Preview on": "預覽位置",
   // 1.4.5 UX round, P2: timed holds in the finish summary (next hold is shorter)
   "shorter": "縮短一點",
+  // running and trail (Garmin import)
+  "Trail run": "越野跑",
+  "From Garmin": "來自 Garmin",
+  "Climb": "爬升",
 }

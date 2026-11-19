@@ -68,7 +68,7 @@ the server's stderr.
 
 ## Tools
 
-Twelve read-only tools, and seven that write:
+Fifteen read-only tools, and twelve that write:
 
 | Tool | What it answers |
 |---|---|
@@ -91,6 +91,14 @@ Twelve read-only tools, and seven that write:
 | `create_exercise` | *Writes.* "Add a single-leg balance hold" → an exercise of your own (name, body part, equipment, muscles), stored like one made in the app, ready for routines and workouts by name or id. A name the library already has is refused with that exercise as a candidate. Needs Plans or Workouts at "Change directly". |
 | `set_exercise_note` | *Writes.* The standing tip shown with an exercise in every workout. `replace` (default) or `append`; empty text removes it. Needs Notes at "Change directly". |
 | `set_day_note` | *Writes.* A note on a day: a quick pick, a line of text, or both (today or earlier). Needs Notes at "Change directly". |
+| `list_activities` | What runs, trail runs and other sport (not gym workouts) did I do? Date, sport, duration, km, pace, terrain, climb and descent in metres, average and max heart rate, seconds in each heart-rate zone, cadence, training effect, load, and where it came from. Needs Workouts at "See". |
+| `get_run_summary` | What a week of running adds up to (or several weeks, for a trend): runs, trail runs, km, hours, climb, longest run, share of easy running (zones 1 and 2), average pace, load, plus the planned runs and whether each was done. Needs Workouts at "See". |
+| `log_activity` | *Writes.* "Trail 14 km, 820 m of climb, 1 h 42, heart rate 152" → an activity in your history (not a workout). Needs Workouts at "Change directly". |
+| `import_garmin_activities` | *Writes.* The Garmin collector's records (`activities.json`) into your history. Safe to repeat; a run the phone already read from Health Connect gets the Garmin numbers added instead of a second entry. `node scripts/import-garmin.mjs <activities.json>` runs it from a shell or a timer. Needs Workouts at "Change directly". |
+| `set_run_plan` | *Writes.* Plan a run or a trail run for a date (duration, km, climb, a note), or clear it. Shows in `get_week_plan` as `runs`. Needs Plans at "Change directly". |
+| `get_run_session` | The structured run session planned for a date: name, type, the steps (with repeated blocks) and the same steps unrolled one by one for a watch, totals, and whether a run did it. The Trail Coach app reads it at `GET /api/token/run/today`. Needs Plans at "See". |
+| `set_run_session` | *Writes.* Create, replace or clear a structured session ("VO2 6 × 3 min Z4 / 2 min recovery"), with the watch's rules checked (heart rate 40 to 230 bpm, 24-character names, 60 steps once unrolled, climb margin only on easy steps). Needs Plans at "Change directly". |
+| `link_activity_to_session` | *Writes.* Say which planned session a logged run counts for when it is not the one of its own day. Needs Workouts at "Change directly". |
 
 `get_routine` and `preview_session` answer two different questions, and confusing them is the
 easiest way for a coach to give wrong advice. `get_routine` reports what the routine *stores*.

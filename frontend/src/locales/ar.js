@@ -5952,4 +5952,8 @@ export default {
   "Preview on": "المعاينة على",
   // 1.4.5 UX round, P2: timed holds in the finish summary (next hold is shorter)
   "shorter": "أقصر قليلًا",
+  // running and trail (Garmin import)
+  "Trail run": "الجري على المسارات",
+  "From Garmin": "من Garmin",
+  "Climb": "التسلق",
 }

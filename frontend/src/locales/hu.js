@@ -5900,4 +5900,8 @@ export default {
   "Preview on": "Előnézet itt",
   // 1.4.5 UX round, P2: timed holds in the finish summary (next hold is shorter)
   "shorter": "kicsit rövidebben",
+  // running and trail (Garmin import)
+  "Trail run": "Terepfutás",
+  "From Garmin": "Garminból",
+  "Climb": "Emelkedés",
 }

@@ -25,20 +25,20 @@
 import { NOTE_MAX } from './history.js'
 import { hashId } from './weigh-ins.js'
 
-export const SPORTS = ['run', 'ride', 'swim', 'hike', 'row', 'ski', 'football', 'racket', 'ball', 'climb', 'fight', 'yoga', 'dance', 'other']
+export const SPORTS = ['run', 'trail', 'ride', 'swim', 'hike', 'row', 'ski', 'football', 'racket', 'ball', 'climb', 'fight', 'yoga', 'dance', 'other']
 export const SPORT_LABEL = {
-  run: 'Run', ride: 'Ride', swim: 'Swim', hike: 'Hike', row: 'Rowing', ski: 'Skiing', football: 'Football',
+  run: 'Run', trail: 'Trail run', ride: 'Ride', swim: 'Swim', hike: 'Hike', row: 'Rowing', ski: 'Skiing', football: 'Football',
   racket: 'Racket sports', ball: 'Ball games', climb: 'Climbing', fight: 'Boxing & martial arts', yoga: 'Yoga & pilates',
   dance: 'Dance', other: 'Other sport',
 }
 export const SPORT_ICON = {
-  run: 'figureRun', ride: 'bike', swim: 'swim', hike: 'tree', row: 'arm', ski: 'snowflake', football: 'target',
+  run: 'figureRun', trail: 'tree', ride: 'bike', swim: 'swim', hike: 'tree', row: 'arm', ski: 'snowflake', football: 'target',
   racket: 'bolt', ball: 'trophy', climb: 'pullup', fight: 'boxing', yoga: 'stretch', dance: 'sparkles', other: 'flag',
 }
 // The durations the sheet offers in one tap, in minutes.
 export const SPORT_PRESETS = [30, 60, 90]
 export const ACTIVITY_MIN_MAX = 24 * 60
-export const SOURCES = ['hc', 'ah', 'import', 'manual', 'or']
+export const SOURCES = ['hc', 'ah', 'import', 'manual', 'or', 'garmin']
 const TITLE_MAX = 80
 
 // What a sport asks of the muscles, for the recovery model: per 30 minutes, in hard-set
@@ -48,6 +48,8 @@ const TITLE_MAX = 80
 // per muscle, like a workout.
 export const SPORT_LOAD = {
   run: { sets: 3, muscles: { calves: 0.8, quadriceps: 0.6, hamstring: 0.5, gluteal: 0.5, 'hip-flexors': 0.3 } },
+  // A trail run is a run with hills: the long descents hit the quads and the calves harder.
+  trail: { sets: 3.5, muscles: { quadriceps: 0.9, calves: 0.8, gluteal: 0.6, hamstring: 0.5, 'hip-flexors': 0.3, adductors: 0.2 } },
   ride: { sets: 2.5, muscles: { quadriceps: 0.9, gluteal: 0.5, hamstring: 0.3, calves: 0.3 } },
   swim: { sets: 2, muscles: { lats: 0.7, 'front-delts': 0.4, 'side-delts': 0.3, triceps: 0.3, 'upper-back': 0.3 } },
   hike: { sets: 1.5, muscles: { quadriceps: 0.6, gluteal: 0.6, calves: 0.5, hamstring: 0.3 } },
@@ -67,7 +69,55 @@ const isMap = v => !!v && typeof v === 'object' && !Array.isArray(v)
 const ISO = /^\d{4}-\d{2}-\d{2}$/
 const roundKm = v => Math.round(v * 100) / 100
 
-/** One stored entry read back: { d, sport, min, km?, at?, title?, src } or null for a cleared or broken one. */
+// What a run can carry besides its time and distance (all optional; Garmin fills them in): the
+// ground, the climb and descent in metres, heart rate, the seconds in each of the five zones,
+// cadence, Garmin's training effects and load, and Garmin's own id so a second import finds it.
+export const TERRAINS = ['road', 'trail', 'treadmill', 'track']
+export const TERRAIN_LABEL = { road: 'Road', trail: 'Trail', treadmill: 'Treadmill', track: 'Track' }
+const RUN_SPORTS = new Set(['run', 'trail'])
+export const isRunSport = sport => RUN_SPORTS.has(sport)
+
+const inRange = (v, lo, hi, digits = 0) => {
+  const n = Number(v)
+  if (v == null || v === '' || !Number.isFinite(n) || n < lo || n > hi) return null
+  const k = 10 ** digits
+  return Math.round(n * k) / k
+}
+// The five zones: seconds in each, or nothing (a list of the wrong length or with a bad number is dropped whole).
+const readZones = z => {
+  if (!Array.isArray(z) || z.length !== 5) return null
+  const out = z.map(v => inRange(v, 0, 24 * 3600))
+  return out.every(v => v != null) && out.some(v => v > 0) ? out : null
+}
+
+/** The run fields of an entry, read back (only those that hold a usable value). */
+function readRunFields(entry) {
+  const f = {}
+  const terrain = TERRAINS.includes(entry.terrain) ? entry.terrain : null
+  const asc = inRange(entry.asc, 0, 20000), desc = inRange(entry.desc, 0, 20000)
+  const avgHr = inRange(entry.avgHr, 30, 250), maxHr = inRange(entry.maxHr, 30, 250)
+  const zones = readZones(entry.zones)
+  const cad = inRange(entry.cad, 40, 260)
+  const te = inRange(entry.te, 0, 5, 1), teAn = inRange(entry.teAn, 0, 5, 1)
+  const load = inRange(entry.load, 0, 3000)
+  const gid = typeof entry.gid === 'string' || typeof entry.gid === 'number' ? String(entry.gid).trim().slice(0, 40) : ''
+  if (terrain) f.terrain = terrain
+  if (asc != null) f.asc = asc
+  if (desc != null) f.desc = desc
+  if (avgHr != null) f.avgHr = avgHr
+  if (maxHr != null) f.maxHr = maxHr
+  if (zones) f.zones = zones
+  if (cad != null) f.cad = cad
+  if (te != null) f.te = te
+  if (teAn != null) f.teAn = teAn
+  if (load != null) f.load = load
+  if (gid) f.gid = gid
+  // The planned session (lib/run-plan.js) this run counts for, when it is not the one of its own day.
+  if (ISO.test(String(entry.sessionDate || ''))) f.sessionDate = entry.sessionDate
+  return f
+}
+
+/** One stored entry read back: { d, sport, min, km?, at?, title?, src, …run fields } or null for a cleared or broken one. */
 export function readActivity(entry) {
   if (!isMap(entry) || !ISO.test(String(entry.d || ''))) return null
   const sport = SPORTS.includes(entry.sport) ? entry.sport : 'other'
@@ -84,8 +134,15 @@ export function readActivity(entry) {
     ...(title ? { title } : {}),
     ...(note ? { note } : {}),
     src: SOURCES.includes(entry.src) ? entry.src : 'manual',
+    ...readRunFields(entry),
   }
 }
+
+/** Seconds per kilometre of a session with both a time and a distance, else null. */
+export const paceOf = a => (a && a.km > 0 && a.min > 0 ? Math.round(a.min * 60 / a.km) : null)
+
+/** 335 → "5:35" (a pace in seconds per kilometre). */
+export const fmtPace = sec => (Number.isFinite(sec) && sec > 0 ? `${Math.floor(sec / 60)}:${String(Math.round(sec % 60)).padStart(2, '0')}` : '')
 
 /** Every activity, newest day first, as { id, d, sport, min, … }. */
 export function activitiesOf(S) {
@@ -119,10 +176,21 @@ export function withActivity(map, id, activity, now = Date.now()) {
 /** What a row calls it: its own title when it came with one, else the sport. */
 export const activityName = (a, tr = s => s) => (a?.title ? a.title : tr(SPORT_LABEL[a?.sport] || SPORT_LABEL.other))
 
-/** "Run · 42 min · 8.1 km" (km in the profile's unit is the caller's business: `dist` formats it). */
+/**
+ * "Run · 42 min · 8.1 km" (km in the profile's unit is the caller's business: `dist` formats it).
+ * A run that has them adds the climb ("↑ 820 m"), the pace ("5:05/km") and the average heart rate
+ * ("152 bpm"): numbers with their own units, so nothing here needs a translation.
+ */
 export function activityLine(a, tr = s => s, dist = km => `${km} km`) {
   if (!a) return ''
-  return [activityName(a, tr), tr('{0} min', a.min), a.km ? dist(a.km) : null].filter(Boolean).join(' · ')
+  const pace = paceOf(a)
+  return [
+    activityName(a, tr), tr('{0} min', a.min), a.km ? dist(a.km) : null,
+    a.asc > 0 ? `↑ ${a.asc} m` : null,
+    // The pace only on a trail run or a run that came with Garmin-style detail: a plain "Run · 42 min · 8.1 km" stays as it was.
+    pace && (a.sport === 'trail' || (isRunSport(a.sport) && (a.terrain || a.asc != null || a.avgHr))) ? `${fmtPace(pace)}/km` : null,
+    a.avgHr ? `${a.avgHr} bpm` : null,
+  ].filter(Boolean).join(' · ')
 }
 
 /** Minutes, sessions and km per sport in the days [from, to], for a month or a report line. */
@@ -246,6 +314,7 @@ const NAME_SPORT = [
   [/\b(swim|swimming|schwimmen|natation|nata[cç][aã]o|nuoto)\b/, 'swim'],
   [/\b(kayak|canoe|paddle|paddling|sup|rudern)\b/, 'row'],
   [/\b(cycling|bike ride|road bike|mountain bike|mtb|gravel|velo|radfahren|rennrad|outdoor ride)\b/, 'ride'],
+  [/\b(trail|trail running|ultra|sky ?run)\b/, 'trail'],
   [/\b(running|outdoor run|trail run|jogging|joggen|laufen|course [aà] pied|corrida|run)\b/, 'run'],
 ]
 // Gym cardio by its name: stays a workout entry, never an activity.

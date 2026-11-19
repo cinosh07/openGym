@@ -5863,4 +5863,8 @@ export default {
   "Preview on": "پیش‌نمایش روی",
   // 1.4.5 UX round, P2: timed holds in the finish summary (next hold is shorter)
   "shorter": "کمی کوتاه‌تر",
+  // running and trail (Garmin import)
+  "Trail run": "دویدن در مسیر طبیعی",
+  "From Garmin": "از Garmin",
+  "Climb": "ارتفاع‌گیری",
 }
